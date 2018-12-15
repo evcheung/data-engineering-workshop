@@ -4,6 +4,7 @@ import java.time.Clock
 
 import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.streaming.Trigger
 
 object Station {
   val log: Logger = LogManager.getRootLogger
@@ -17,12 +18,12 @@ object Station {
       .config("spark.hadoop.dfs.client.use.datanode.hostname", "true")
       .appName("Spark Workshop Station").getOrCreate()
 
-    run(spark, "hdfs://hadoop:9000/workshop/data")
+    run(spark)
 
     spark.stop()
   }
 
-  def run(spark: SparkSession, outputPath: String): Unit = {
+  def run(spark: SparkSession): Unit = {
     spark.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", "kafka:9092")
@@ -31,10 +32,7 @@ object Station {
       .load()
       .selectExpr("CAST(value AS STRING) as raw_payload")
       .writeStream
-      .outputMode("append")
-      .format("csv")
-      .option("path", outputPath)
-      .option("checkpointLocation", "hdfs://hadoop:9000/workshop/checkpoints")
+      .format("console")
       .start()
       .awaitTermination()
   }
