@@ -7,6 +7,7 @@ services:
         - ./data/hadoop/:/dfs/
         - ./conf/hadoop/core-site.xml:/hadoop/etc/hadoop/core-site.xml
         - ./conf/hadoop/hdfs-site.xml:/hadoop/etc/hadoop/hdfs-site.xml
+        - ./shared/hadoop:/shared/
         ports:
         - "9000:9000"
         - "8020:8020"
