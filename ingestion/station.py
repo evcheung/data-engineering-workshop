@@ -12,8 +12,10 @@ stations = []
 for i in range(100):
     station = {
         "id": "ST%d" % (1000 + i),
-        "longtitude": random.randint(34.243563 * 1000000, 34.306175 * 1000000) / 1000000.0,
-        "latitude": random.randint(108.896280 * 1000000, 108.994882 * 1000000) / 1000000.0
+        "location": {
+            "longtitude": random.randint(34.243563 * 1000000, 34.306175 * 1000000) / 1000000.0,
+            "latitude": random.randint(108.896280 * 1000000, 108.994882 * 1000000) / 1000000.0
+        }
     }
     stations.append(station)
 
