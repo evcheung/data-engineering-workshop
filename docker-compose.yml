@@ -5,9 +5,16 @@ services:
         hostname: hadoop
         volumes:
         - ./data/hadoop/:/dfs/
+        - ./conf/hadoop/core-site.xml:/hadoop/etc/hadoop/core-site.xml
+        - ./conf/hadoop/hdfs-site.xml:/hadoop/etc/hadoop/hdfs-site.xml
         ports:
         - "9000:9000"
+        - "8020:8020"
+        - "50010:50010"
+        - "50020:50020"
         - "50070:50070"
+        - "50075:50075"
+        - "50090:50090"
         networks:
         - data-engineering-workshop-internal
     spark:
@@ -15,7 +22,9 @@ services:
         hostname: spark
         ports:
         - "8080:8080"
+        - "8081:8081"
         - "18080:18080"
+        - "7077:7077"
         networks:
         - data-engineering-workshop-internal
     kafka:
@@ -24,6 +33,8 @@ services:
         volumes:
         - ./data/zookeeper:/tmp/zookeeper
         - ./data/kafka:/tmp/kafka-logs
+        - ./conf/kafka/server.properties:/kafka/config/server.properties
+        - ./conf/kafka/zookeeper.properties:/kafka/config/zookeeper.properties
         networks:
         - data-engineering-workshop-internal
         ports:
