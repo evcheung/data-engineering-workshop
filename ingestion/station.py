@@ -20,7 +20,7 @@ for i in range(5):
     stations.append(station)
 
 while True:
-    for i in range(100):
+    for i in range(5):
         station = stations[i]
         station["timestamp"] = str(datetime.datetime.now())
 
