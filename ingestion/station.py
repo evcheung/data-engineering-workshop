@@ -3,8 +3,10 @@ import json
 import random
 import time
 import datetime
+import os
 
-producer = KafkaProducer(bootstrap_servers='kafka:9092')
+kafka_servers = os.getenv('KAFKA_SERVERS', "127.0.0.1:9092")
+producer = KafkaProducer(bootstrap_servers=kafka_servers)
 producer.flush()
 
 stations = []
