@@ -8,22 +8,16 @@ function run {
         -e KAFKA_SERVERS=kafka:9092 \
         --network=data-engineering-workshop_data-engineering-workshop-internal ingestion \
         python $SCRIPT_NAME
-
 }
 
 case $1 in
     build)
         docker build . -t ingestion
         ;;
-    station)
-        run station.py
-        ;;
-    status)
-        run status.py
+    orders)
+        run orders.py
         ;;
     *)
         echo "help"
         ;;
 esac
-
-
