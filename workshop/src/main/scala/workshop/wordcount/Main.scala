@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.SparkSession
 
-object WordCount {
+object Main {
   val log: Logger = LogManager.getRootLogger
   implicit val clock: Clock = Clock.systemDefaultZone()
 

@@ -7,7 +7,7 @@ import org.apache.commons.io.filefilter._
 import workshop.DefaultFeatureSpecWithSpark
 
 
-class WordCountTest extends DefaultFeatureSpecWithSpark {
+class MainTest extends DefaultFeatureSpecWithSpark {
   feature("Word Count application") {
     scenario("Acceptance test for basic use") {
       Given("A simple input file, a Spark context, and a known output file")
@@ -27,7 +27,7 @@ class WordCountTest extends DefaultFeatureSpecWithSpark {
 
       When("I trigger the application")
 
-      WordCount.run(spark,
+      Main.run(spark,
         inputFile.toUri.toString,
         outputDirectory.toUri.toString)
 
@@ -79,7 +79,7 @@ class WordCountTest extends DefaultFeatureSpecWithSpark {
 
       When("I trigger the application")
 
-      WordCount.run(spark,
+      Main.run(spark,
         inputFile.toUri.toString,
         outputDirectory.toUri.toString)
 

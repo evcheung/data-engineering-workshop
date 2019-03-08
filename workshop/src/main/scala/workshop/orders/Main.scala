@@ -3,7 +3,9 @@ package workshop.orders
 import java.time.Clock
 
 import org.apache.log4j.{Level, LogManager, Logger}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types.{ArrayType, StructField, StructType, _}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object Main {
   val log: Logger = LogManager.getRootLogger
@@ -23,16 +25,35 @@ object Main {
   }
 
   def run(spark: SparkSession): Unit = {
-    spark.readStream
+    val dataFrame = spark.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", "kafka:9092")
       .option("subscribe", "orders")
       .option("startingOffsets", "latest")
       .load()
-      .selectExpr("CAST(value AS STRING) as raw_payload")
+
+    process(spark, dataFrame)
       .writeStream
       .format("console")
       .start()
       .awaitTermination()
+  }
+
+  def process(spark: SparkSession, dataFrame: DataFrame): DataFrame = {
+
+    val schema = ArrayType(StructType(Seq(
+      StructField("orderId", DataTypes.StringType),
+      StructField("itemId", DataTypes.StringType),
+      StructField("quantity", DataTypes.DoubleType),
+      StructField("price", DataTypes.createDecimalType(10, 2)),
+      StructField("timestamp", DataTypes.TimestampType)
+    )))
+
+    import spark.implicits._
+
+    dataFrame
+      .selectExpr("CAST(value AS STRING) as raw_payload")
+      .withColumn("values", explode(from_json($"raw_payload", schema)))
+      .select($"values.*")
   }
 }

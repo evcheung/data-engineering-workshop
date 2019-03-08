@@ -6,11 +6,16 @@ scalaVersion := "2.11.12"
 
 val sparkVersion = "2.3.2"
 
+lazy val sparkDependencies = Seq(
+  "org.apache.spark" %% "spark-core" % sparkVersion,
+  "org.apache.spark" %% "spark-sql" % sparkVersion,
+  "org.apache.spark" %% "spark-streaming" % sparkVersion
+)
+
+libraryDependencies ++= sparkDependencies.map(_ % "provided")
+
 libraryDependencies ++= Seq(
-  "org.apache.spark" %% "spark-core" % sparkVersion % "provided",
-  "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
-  "org.apache.spark" %% "spark-streaming" % sparkVersion % "provided",
-  "org.apache.spark" %% "spark-sql-kafka-0-10" % "2.3.2",
+  "org.apache.spark" %% "spark-sql-kafka-0-10" % sparkVersion,
   "com.typesafe" % "config" % "1.3.2",
   "org.scalatest" %% "scalatest" % "3.0.5" % "test"
 )
