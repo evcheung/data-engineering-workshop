@@ -36,10 +36,28 @@ services:
         - ./data/kafka:/tmp/kafka-logs
         - ./conf/kafka/server.properties:/kafka/config/server.properties
         - ./conf/kafka/zookeeper.properties:/kafka/config/zookeeper.properties
+        - ./conf/kafka/docker-entrypoint.sh:/kafka/docker-entrypoint.sh
         networks:
         - data-engineering-workshop-internal
         ports:
         - "9092:9092"
+    zookeeper:
+        image: zookeeper:3.4
+        volumes:
+        - ./data/zookeeper/data:/data
+        - ./data/zookeeper/datalog:/datalog
+        networks:
+        - data-engineering-workshop-internal
+        ports:
         - "2181:2181"
+    database:
+        hostname: database
+        image: postgres:11.2-alpine
+        environment:
+        - POSTGRES_PASSWORD=postgres
+        - POSTGRES_USER=postgres
+        volumes:
+        - ./data/postgres/:/var/lib/postgresql/data
+        - ./conf/postgres/initdb.d/:/docker-entrypoint-initdb.d
 networks:
     data-engineering-workshop-internal:

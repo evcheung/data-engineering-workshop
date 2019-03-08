@@ -1,12 +1,11 @@
-package workshop.station
+package workshop.orders
 
 import java.time.Clock
 
 import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.streaming.Trigger
 
-object Station {
+object Main {
   val log: Logger = LogManager.getRootLogger
   implicit val clock: Clock = Clock.systemDefaultZone()
 
@@ -16,7 +15,7 @@ object Station {
     val spark = SparkSession
       .builder
       .config("spark.hadoop.dfs.client.use.datanode.hostname", "true")
-      .appName("Spark Workshop Station").getOrCreate()
+      .appName("Order Job").getOrCreate()
 
     run(spark)
 
@@ -27,7 +26,7 @@ object Station {
     spark.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", "kafka:9092")
-      .option("subscribe", "station_information")
+      .option("subscribe", "orders")
       .option("startingOffsets", "latest")
       .load()
       .selectExpr("CAST(value AS STRING) as raw_payload")
