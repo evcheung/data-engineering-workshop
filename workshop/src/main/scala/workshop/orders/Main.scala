@@ -4,6 +4,7 @@ import java.time.Clock
 
 import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.types.{ArrayType, StructField, StructType, _}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -12,12 +13,12 @@ object Main {
   implicit val clock: Clock = Clock.systemDefaultZone()
 
   def main(args: Array[String]): Unit = {
-    log.setLevel(Level.INFO)
+    log.setLevel(Level.ERROR)
 
     val spark = SparkSession
       .builder
       .config("spark.hadoop.dfs.client.use.datanode.hostname", "true")
-      .appName("Order Job").getOrCreate()
+      .appName("Orders Job").getOrCreate()
 
     run(spark)
 
@@ -25,6 +26,8 @@ object Main {
   }
 
   def run(spark: SparkSession): Unit = {
+    import spark.implicits._
+
     val dataFrame = spark.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", "kafka:9092")
@@ -32,9 +35,22 @@ object Main {
       .option("startingOffsets", "latest")
       .load()
 
-    process(spark, dataFrame)
+    val processedDF = process(spark, dataFrame)
+
+    processedDF
+        .withWatermark("timestamp", "20 seconds")
+      .groupBy(
+        window(
+          $"timestamp",
+          "20 seconds",
+          "10 seconds"),
+        $"itemId"
+      )
+      .count()
       .writeStream
       .format("console")
+      .outputMode(OutputMode.Append())
+      .option("truncate", value = false)
       .start()
       .awaitTermination()
   }
