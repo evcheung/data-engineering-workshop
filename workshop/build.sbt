@@ -16,6 +16,7 @@ libraryDependencies ++= sparkDependencies.map(_ % "provided")
 
 libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-sql-kafka-0-10" % sparkVersion,
+  "org.codehaus.jettison" % "jettison" % "1.4.0",
   "com.typesafe" % "config" % "1.3.2",
   "org.scalatest" %% "scalatest" % "3.0.5" % "test"
 )

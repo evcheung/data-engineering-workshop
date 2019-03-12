@@ -1,0 +1,26 @@
+version: '3'
+services:
+    kafka-connect-source:
+        build:
+            context: kafka-connect-jdbc
+        networks:
+        - data-engineering-workshop-internal
+        ports:
+        - "28082:28082"
+        volumes:
+        - ./conf/kafka-connect/connect-standalone.properties:/kafka/config/connect-standalone.properties
+        - ./conf/kafka-connect/jdbc-source.properties:/kafka/config/jdbc-source.properties
+        command: ["bin/connect-standalone.sh config/connect-standalone.properties", "config/jdbc-source.properties"]
+    kafka-connect-sink:
+        build:
+            context: kafka-connect-jdbc
+        networks:
+        - data-engineering-workshop-internal
+        ports:
+        - "28083:28082"
+        volumes:
+        - ./conf/kafka-connect/connect-standalone.properties:/kafka/config/connect-standalone.properties
+        - ./conf/kafka-connect/jdbc-sink.properties:/kafka/config/jdbc-sink.properties
+        command: ["bin/connect-standalone.sh config/connect-standalone.properties", "config/jdbc-sink.properties"]
+networks:
+    data-engineering-workshop-internal:

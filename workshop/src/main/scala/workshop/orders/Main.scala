@@ -5,8 +5,11 @@ import java.time.Clock
 import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.streaming.OutputMode
-import org.apache.spark.sql.types.{ArrayType, StructField, StructType, _}
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.types.{StructField, StructType, _}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.codehaus.jackson.JsonNode
+import org.codehaus.jettison.json.{JSONArray, JSONObject}
+import org.joda.time.DateTime
 
 object Main {
   val log: Logger = LogManager.getRootLogger
@@ -31,45 +34,106 @@ object Main {
     val dataFrame = spark.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", "kafka:9092")
-      .option("subscribe", "orders")
+      .option("subscribe", "source-orders")
       .option("startingOffsets", "latest")
       .load()
 
-    val processedDF = process(spark, dataFrame)
+    val extractedDF = process(spark, dataFrame)
 
-    processedDF
-        .withWatermark("timestamp", "20 seconds")
+    val processedDF = extractedDF
+      .withWatermark("timestamp", "20 seconds")
       .groupBy(
         window(
           $"timestamp",
-          "20 seconds",
-          "10 seconds"),
+          "30 seconds",
+          "20 seconds"),
         $"itemId"
       )
       .count()
+
+    toJson(spark, processedDF)
+      .writeStream
+      .format("kafka")
+      .outputMode(OutputMode.Append())
+      .option("kafka.bootstrap.servers", "kafka:9092")
+      .option("checkpointLocation", "hdfs://hadoop:9000/checkpointLocation")
+      .option("topic", "orders")
+      .start()
+
+    processedDF
       .writeStream
       .format("console")
-      .outputMode(OutputMode.Append())
       .option("truncate", value = false)
+      .outputMode(OutputMode.Append())
       .start()
       .awaitTermination()
   }
 
+  def toJson(spark: SparkSession, df: DataFrame): DataFrame = {
+    import spark.implicits._
+
+    val convert = udf((itemId: Integer, count: Integer, startTime: java.sql.Timestamp, endTime: java.sql.Timestamp) => {
+      val schema = new JSONObject()
+        .put("type", "struct")
+        .put("fields", new JSONArray()
+          .put(
+            new JSONObject()
+              .put("type", "int64")
+              .put("optional", false)
+              .put("field", "itemId")
+          )
+          .put(
+            new JSONObject()
+              .put("type", "int64")
+              .put("optional", false)
+              .put("field", "count")
+          )
+          .put(
+            new JSONObject()
+              .put("type", "string")
+              .put("optional", false)
+              .put("field", "startTime")
+          )
+          .put(
+            new JSONObject()
+              .put("type", "string")
+              .put("optional", false)
+              .put("field", "endTime")
+          )
+        )
+      val payload = new JSONObject()
+        .put("itemId", itemId)
+        .put("count", count)
+        .put("startTime", startTime.toString)
+        .put("endTime", startTime.toString)
+
+      new JSONObject()
+        .put("schema", schema)
+        .put("payload", payload)
+        .toString
+    })
+
+    df.withColumn("value", convert($"itemId", $"count", $"window.start", $"window.end"))
+      .select($"value")
+  }
+
   def process(spark: SparkSession, dataFrame: DataFrame): DataFrame = {
 
-    val schema = ArrayType(StructType(Seq(
+    val schema = StructType(Seq(
+      StructField("id", DataTypes.IntegerType),
       StructField("orderId", DataTypes.StringType),
       StructField("itemId", DataTypes.StringType),
-      StructField("quantity", DataTypes.DoubleType),
-      StructField("price", DataTypes.createDecimalType(10, 2)),
-      StructField("timestamp", DataTypes.TimestampType)
-    )))
+      StructField("quantity", DataTypes.IntegerType),
+      StructField("price", DataTypes.IntegerType),
+      StructField("timestamp", DataTypes.createDecimalType(20, 0))
+    ))
 
     import spark.implicits._
 
-    dataFrame
-      .selectExpr("CAST(value AS STRING) as raw_payload")
-      .withColumn("values", explode(from_json($"raw_payload", schema)))
-      .select($"values.*")
+    val frame = dataFrame
+      .withColumn("body", from_json($"value".cast("string"), schema))
+    frame
+      .select($"body.*")
+      .withColumn("timestamp", ($"timestamp" / 1000).cast("timestamp"))
   }
 }
