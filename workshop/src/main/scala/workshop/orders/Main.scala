@@ -6,10 +6,8 @@ import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.types.{StructField, StructType, _}
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import org.codehaus.jackson.JsonNode
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.codehaus.jettison.json.{JSONArray, JSONObject}
-import org.joda.time.DateTime
 
 object Main {
   val log: Logger = LogManager.getRootLogger
@@ -38,7 +36,7 @@ object Main {
       .option("startingOffsets", "latest")
       .load()
 
-    val extractedDF = process(spark, dataFrame)
+    val extractedDF = extractFields(spark, dataFrame)
 
     val processedDF = extractedDF
       .withWatermark("timestamp", "20 seconds")
@@ -75,6 +73,7 @@ object Main {
     val convert = udf((itemId: Integer, count: Integer, startTime: java.sql.Timestamp, endTime: java.sql.Timestamp) => {
       val schema = new JSONObject()
         .put("type", "struct")
+        .put("optional", false)
         .put("fields", new JSONArray()
           .put(
             new JSONObject()
@@ -90,22 +89,25 @@ object Main {
           )
           .put(
             new JSONObject()
-              .put("type", "string")
+              .put("type", "int64")
               .put("optional", false)
               .put("field", "startTime")
+              .put("name", "org.apache.kafka.connect.data.Timestamp")
           )
           .put(
             new JSONObject()
-              .put("type", "string")
+              .put("type", "int64")
               .put("optional", false)
               .put("field", "endTime")
+              .put("name", "org.apache.kafka.connect.data.Timestamp")
           )
         )
+
       val payload = new JSONObject()
         .put("itemId", itemId)
         .put("count", count)
-        .put("startTime", startTime.toString)
-        .put("endTime", startTime.toString)
+        .put("startTime", startTime.toInstant.toEpochMilli)
+        .put("endTime", endTime.toInstant.toEpochMilli)
 
       new JSONObject()
         .put("schema", schema)
@@ -117,15 +119,18 @@ object Main {
       .select($"value")
   }
 
-  def process(spark: SparkSession, dataFrame: DataFrame): DataFrame = {
+  def extractFields(spark: SparkSession, dataFrame: DataFrame): DataFrame = {
 
     val schema = StructType(Seq(
-      StructField("id", DataTypes.IntegerType),
-      StructField("orderId", DataTypes.StringType),
-      StructField("itemId", DataTypes.StringType),
-      StructField("quantity", DataTypes.IntegerType),
-      StructField("price", DataTypes.IntegerType),
-      StructField("timestamp", DataTypes.createDecimalType(20, 0))
+      StructField("payload", StructType(Seq(
+        StructField("id", DataTypes.IntegerType),
+        StructField("orderId", DataTypes.StringType),
+        StructField("itemId", DataTypes.StringType),
+        StructField("quantity", DataTypes.IntegerType),
+        StructField("price", DataTypes.IntegerType),
+        StructField("timestamp", DataTypes.createDecimalType(20, 0))
+      ))
+      )
     ))
 
     import spark.implicits._
@@ -133,7 +138,7 @@ object Main {
     val frame = dataFrame
       .withColumn("body", from_json($"value".cast("string"), schema))
     frame
-      .select($"body.*")
+      .select($"body.payload.*")
       .withColumn("timestamp", ($"timestamp" / 1000).cast("timestamp"))
   }
 }

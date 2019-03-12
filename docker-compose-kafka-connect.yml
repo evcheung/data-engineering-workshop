@@ -8,8 +8,8 @@ services:
         ports:
         - "28082:28082"
         volumes:
-        - ./conf/kafka-connect/connect-standalone.properties:/kafka/config/connect-standalone.properties
-        - ./conf/kafka-connect/jdbc-source.properties:/kafka/config/jdbc-source.properties
+        - ./conf/kafka-connect-jdbc-source/connect-standalone.properties:/kafka/config/connect-standalone.properties
+        - ./conf/kafka-connect-jdbc-source/jdbc-source.properties:/kafka/config/jdbc-source.properties
         command: ["bin/connect-standalone.sh config/connect-standalone.properties", "config/jdbc-source.properties"]
     kafka-connect-sink:
         build:
@@ -19,8 +19,8 @@ services:
         ports:
         - "28083:28082"
         volumes:
-        - ./conf/kafka-connect/connect-standalone.properties:/kafka/config/connect-standalone.properties
-        - ./conf/kafka-connect/jdbc-sink.properties:/kafka/config/jdbc-sink.properties
+        - ./conf/kafka-connect-jdbc-sink/connect-standalone.properties:/kafka/config/connect-standalone.properties
+        - ./conf/kafka-connect-jdbc-sink/jdbc-sink.properties:/kafka/config/jdbc-sink.properties
         command: ["bin/connect-standalone.sh config/connect-standalone.properties", "config/jdbc-sink.properties"]
 networks:
     data-engineering-workshop-internal:

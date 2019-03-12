@@ -1,7 +1,9 @@
 package workshop.orders
 
-import workshop.DefaultFeatureSpecWithSpark
+import java.sql.Timestamp
+
 import org.apache.spark.sql.functions._
+import workshop.DefaultFeatureSpecWithSpark
 
 class MainTest extends DefaultFeatureSpecWithSpark {
   feature("Orders Application") {
@@ -16,17 +18,18 @@ class MainTest extends DefaultFeatureSpecWithSpark {
         """
           |
           |{
-          | "id": 1,
-          | "orderId": "20190101010101",
-          | "itemId": "12345",
-          | "quantity": 5,
-          | "price": 10,
-          | "timestamp": 1552262400000
+          | "payload": {
+          |   "id": 1,
+          |   "orderId": "20190101010101",
+          |   "itemId": "12345",
+          |   "quantity": 5,
+          |   "price": 10,
+          |   "timestamp": 1552262400000
+          | }
           |}
-          |
         """.stripMargin
       val dataFrame = Seq(json).toDF("value")
-      val frame = Main.process(spark, dataFrame)
+      val frame = Main.extractFields(spark, dataFrame)
 
       frame.columns should equal(Array("id", "orderId", "itemId", "quantity", "price", "timestamp"))
 
@@ -38,7 +41,7 @@ class MainTest extends DefaultFeatureSpecWithSpark {
       row.getAs[String]("itemId") should be("12345")
       row.getAs[Double]("quantity") should be(5)
       row.getAs[Integer]("price") should equal(10)
-      row.getAs[java.sql.Timestamp]("timestamp") should be(java.sql.Timestamp.valueOf("2019-03-11 08:00:00.0"))
+      row.getAs[Timestamp]("timestamp") should be(java.sql.Timestamp.valueOf("2019-03-11 08:00:00.0"))
     }
   }
 
@@ -55,8 +58,11 @@ class MainTest extends DefaultFeatureSpecWithSpark {
       ).toDF("itemId", "count", "start", "end")
         .select($"itemId", $"count", struct($"start", $"end").alias("window"))
 
-      val frameWithSchema = Main.toJson(spark, df)
-      frameWithSchema.columns should equal(Array("value"))
+      val schemaAndPayloadDf = Main.toJson(spark, df)
+      schemaAndPayloadDf.columns should equal(Array("value"))
+
+      schemaAndPayloadDf.count() should equal(1)
+
     }
   }
 

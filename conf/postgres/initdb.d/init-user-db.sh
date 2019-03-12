@@ -9,29 +9,25 @@ EOSQL
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "docker" <<-EOSQL
     CREATE SEQUENCE orders_id_seq;
-
     CREATE TABLE orders (
         id INTEGER NOT NULL DEFAULT nextval('orders_id_seq'),
         "orderId" VARCHAR NOT NULL,
         "itemId" VARCHAR NOT null,
         quantity INTEGER,
         price INTEGER,
-        TIMESTAMP TIMESTAMP,
+        "timestamp" TIMESTAMP,
         PRIMARY KEY (id)
     );
-
     ALTER SEQUENCE orders_id_seq OWNED BY orders.id;
 
-    CREATE SEQUENCE kafa_orders_id_seq;
-
-    CREATE TABLE kafa_orders (
-        id INTEGER NOT NULL DEFAULT nextval('kafa_orders_id_seq'),
+    CREATE SEQUENCE kafka_orders_id_seq;
+    CREATE TABLE kafka_orders (
+        id INTEGER NOT NULL DEFAULT nextval('kafka_orders_id_seq'),
         "itemId" VARCHAR NOT null,
         "count" INTEGER,
         "startTime" TIMESTAMP,
         "endTime" TIMESTAMP,
         PRIMARY KEY (id)
     );
-
-    ALTER SEQUENCE orders_id_seq OWNED BY kafa_orders.id;
+    ALTER SEQUENCE kafka_orders_id_seq OWNED BY kafka_orders.id;
 EOSQL
