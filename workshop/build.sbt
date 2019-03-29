@@ -12,7 +12,9 @@ lazy val sparkDependencies = Seq(
   "org.apache.spark" %% "spark-streaming" % sparkVersion
 )
 
-libraryDependencies ++= sparkDependencies.map(_ % "provided")
+//libraryDependencies ++= sparkDependencies.map(_ % "provided")
+
+libraryDependencies ++= sparkDependencies
 
 libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-sql-kafka-0-10" % sparkVersion,
