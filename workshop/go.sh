@@ -9,7 +9,7 @@ export PATH=${PATH}:/app/spark/bin
 function run {
     docker run --rm -it \
     --network=data-engineering-workshop_data-engineering-workshop-internal \
-    ${CONTAINER_NAME}
+    ${CONTAINER_NAME} bash
 }
 
 case $1 in
